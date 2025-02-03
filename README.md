@@ -4,6 +4,8 @@
 
 Image AutoRegressive generation has emerged as a new powerful paradigm. Specifically, image autoregressive models (IARs) surpass state-of-the-art diffusion models (DMs) in both image quality (FID: 1.48 vs. 1.58) and generation speed. However, the privacy risks associated with IARs remain unexplored, raising concerns regarding their responsible deployment. To address this gap, we conduct a comprehensive privacy analysis of IARs with respect to DMs, which serve as reference points. We develop a novel membership inference attack (MIA) that achieves an exceptionally high success rate in detecting training images (with a TPR@FPR=1\% of 86.38\% vs. 4.91\% for DMs). We leverage our novel MIA to provide dataset inference (DI) for IARs, which requires as few as 6 samples to detect dataset membership (compared to 200 for DI in DMs). Finally, we reconstruct hundreds of training data points from an IAR (e.g., 698 from VAR-d30). Our results demonstrate a fundamental privacy-utility trade-off: while IARs excel in image generation quality and speed, they are also significantly more vulnerable to privacy attacks compared to DMs. This trend suggests that utilizing techniques from DMs within IARs, such as modeling the per-token probability distribution using a diffusion procedure, can potentially help to mitigate the vulnerability of IARs to privacy attacks. 
 
+![Extracted images from VAR-*d*30, RAR-XXL, and MAR-H](res/mem_teaser.png)
+
 ## Requirements
 A suitable conda environment named *iars_priv* can be created and activated with:
 
