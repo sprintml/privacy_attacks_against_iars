@@ -1,0 +1,33 @@
+name: iars_priv
+channels:
+  - pytorch
+  - defaults
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - cudatoolkit
+  - pytorch=2.5
+  - pytorch-cuda
+  - torchvision=0.20.1
+  - numpy
+  - scipy
+  - scikit-learn
+  - pip:
+    - omegaconf
+    - Pillow
+    - huggingface_hub
+    - pytz
+    - transformers
+    - typed-argument-parser
+    - hydra-core==1.3.2
+    - matplotlib
+    - seaborn
+    - timm
+    - einops
+    - ipykernel
+    - webdataset
+    - torch_fidelity
+    - torchinfo
+    - open-clip-torch

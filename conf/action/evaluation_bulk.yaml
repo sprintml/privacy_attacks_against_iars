@@ -1,0 +1,4 @@
+name: evaluation_bulk
+attacks: carlini_lt,secmi_stat,secmi_nn,pia,pian,gradient_masking,multiple_loss,combination_attack
+models: ldm,uvit,dit
+device: cpu

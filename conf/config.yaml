@@ -1,0 +1,11 @@
+cfg:
+  path_to_features: out/features
+  path_to_scores: out/scores
+  path_to_images: out/images
+  path_to_eval_results: out/results
+  seed: 0
+  n_samples_eval: 10000
+  train_samples: 0
+  valid_samples: 0
+  run_id: 10k
+  dataloader_num_workers: 4

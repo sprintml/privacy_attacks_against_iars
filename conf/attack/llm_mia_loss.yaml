@@ -1,0 +1,7 @@
+name: llm_mia_loss
+members_lower: true
+
+metric_list: [loss, zlib_ratio, min_k%, camia]
+ks: [0.1, 0.2, 0.3, 0.4, 0.5]
+is_cfg: false
+timestep: 500

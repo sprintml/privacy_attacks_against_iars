@@ -1,0 +1,10 @@
+name: rar_b
+
+model_size: rar_b
+hidden_size: 768
+num_hidden_layers: 24
+intermediate_size: 3072
+
+dataloader: rar
+image_size: 256
+batch_size: 64

@@ -1,0 +1,10 @@
+name: defense
+members_lower: true
+
+metric_list: [loss, zlib_ratio, logproba, classification, hinge, min_k%, min_k%++, camia]
+ks: [0.1, 0.2, 0.3, 0.4, 0.5]
+max_entropies: [2.0, 4.0, 8.0, 16.0]
+
+stds: [0.0, 0.001, 0.01, 0.1, 1.0, 10.0]
+clips:  [1000000, 100, 10, 1, 0.1]
+is_cfg: true

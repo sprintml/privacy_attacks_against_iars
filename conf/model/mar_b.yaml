@@ -1,0 +1,14 @@
+name: mar_b
+
+size: base
+num_sampling_steps_diffloss: 100
+diffloss_d: 6
+diffloss_w: 1024
+
+dataloader: mar
+image_size: 256
+batch_size: 64
+
+mask_rate: 0.95
+repeat: 1
+diffusion_batch_mul: 64

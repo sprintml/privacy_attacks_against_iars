@@ -1,0 +1,7 @@
+name: imagenet
+dataset_path: /home/datasets/imagenet-1k
+num_classes: 1000
+train_name: train
+test_name: val
+gpus_cnt: 1
+idx: 0

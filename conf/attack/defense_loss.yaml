@@ -1,0 +1,10 @@
+name: defense_loss
+members_lower: true
+
+metric_list: [loss, zlib_ratio, min_k%, camia]
+ks: [0.1, 0.2, 0.3, 0.4, 0.5]
+is_cfg: false
+timestep: 500
+
+stds: [0.0, 0.001, 0.01, 0.1, 1.0]
+clips:  [1000000, 100, 10, 1, 0.1]

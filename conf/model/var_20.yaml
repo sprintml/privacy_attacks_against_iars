@@ -1,0 +1,19 @@
+name: var_20
+
+V: 4096
+Cvae: 32
+ch: 160
+share_quant_resi: 4
+patch_nums: [1, 2, 3, 4, 5, 6, 8, 10, 13, 16]
+model_depth: 20
+shared_aln: false
+
+dataloader: var
+image_size: 256
+batch_size: 64
+
+hflip: false
+mid_reso: 1.125
+
+top_k: 900
+top_p: 0.96

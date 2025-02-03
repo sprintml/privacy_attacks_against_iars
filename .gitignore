@@ -1,0 +1,15 @@
+VAR/
+mar/
+rar/
+out/
+not.ipynb
+*__pycache__/
+model_checkpoints/
+analysis/plots/
+outputs/
+logs/
+__pycache__/
+*.npz
+*.out
+*.sh
+*.bash

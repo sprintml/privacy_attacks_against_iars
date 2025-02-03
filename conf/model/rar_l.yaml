@@ -1,0 +1,10 @@
+name: rar_l
+
+model_size: rar_l
+hidden_size: 1024
+num_hidden_layers: 24
+intermediate_size: 4096
+
+dataloader: rar
+image_size: 256
+batch_size: 64
