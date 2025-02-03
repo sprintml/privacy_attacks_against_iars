@@ -4,7 +4,7 @@ from torch import Tensor as T
 
 from omegaconf import DictConfig
 
-from typing import List
+from typing import List, Tuple
 
 
 class GeneralVARWrapper(nn.Module):
@@ -45,6 +45,12 @@ class GeneralVARWrapper(nn.Module):
         """
         raise NotImplementedError
 
+    def tokens_to_token_list(self, tokens: T) -> List[T]:
+        raise NotImplementedError
+
+    def get_memorization_scores(self, members_features: T, ft_idx: int) -> T:
+        raise NotImplementedError
+
     @torch.no_grad()
     def get_loss_per_token(self, images: T, classes: T, *args, **kwargs) -> T:
         """
@@ -64,6 +70,21 @@ class GeneralVARWrapper(nn.Module):
         clamp_min: float = float("-inf"),
         clamp_max: float = float("inf"),
     ) -> None:
+        raise NotImplementedError
+
+    @torch.no_grad()
+    def generate_single_memorization(
+        self, top: int, target_token_list: List[T], label: T, std: float
+    ) -> T:
+        raise NotImplementedError
+
+    @torch.no_grad()
+    def tokens_to_img(self, tokens: T, *args, **kwargs) -> T:
+        raise NotImplementedError
+
+    def get_target_label_memorization(
+        self, members_features: T, scores: T, sample_classes: T, cls: int, k: int
+    ) -> Tuple[T, T, T]:
         raise NotImplementedError
 
     @torch.no_grad()

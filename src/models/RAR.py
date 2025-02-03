@@ -113,6 +113,73 @@ class RARWrapper(GeneralVARWrapper):
         return profile_macs(self.generator, (tokens, cond, True))
 
     @torch.no_grad()
+    def tokens_to_img(self, tokens: T) -> T:
+        img = self.tokenizer.decode_tokens(tokens.view(tokens.shape[0], -1))
+        img = torch.clamp(img, 0.0, 1.0)
+        return img
+
+    def tokens_to_token_list(self, tokens: T):
+        return [tokens[:, [idx]] for idx in range(tokens.shape[1])]
+
+    def get_memorization_scores(self, members_features: T, ft_idx: int) -> T:
+        return members_features[:, ft_idx, -100:-1].mean(dim=1)
+
+    @torch.no_grad()
+    def generate_single_memorization(
+        self, top: int, target_token_list: T, label: T, std: float
+    ) -> T:
+        B = label.shape[0]
+        condition = self.generator.preprocess_condition(label, cond_drop_prob=0.0)
+        ids = torch.full((B, 0), -1, device=self.model_cfg.device)
+
+        self.generator.enable_kv_cache()
+
+        orders = None
+
+        for step in range(self.generator.image_seq_len):
+            logits = self.generator.forward_fn(
+                ids, condition, orders=orders, is_sampling=True
+            )
+            logits = logits[:, -1]
+
+            if step < top:
+                sampled = target_token_list[step]
+            else:
+                logits = logits + torch.randn_like(logits) * std
+                sampled = logits.argmax(dim=1).unsqueeze(1)
+
+            ids = torch.cat((ids, sampled), dim=-1)
+
+        self.generator.disable_kv_cache()
+        return ids
+
+    def get_target_label_memorization(
+        self, members_features: T, scores: T, sample_classes: T, cls: int, k: int
+    ) -> Tuple[T, T, T]:
+        mask = sample_classes == cls
+        scores_cls = scores.clone()
+        scores_cls[~mask] = -torch.inf
+        mem_samples_indices = torch.topk(scores_cls, 10).indices
+        mem_sample_idx = mem_samples_indices[k]
+        label_B = (
+            members_features[mem_sample_idx, [0]][0, [-1]]
+            .to(self.model_cfg.device)
+            .long()
+        )
+
+        target_tokens = (
+            members_features[mem_sample_idx, [0]][[0], :256]
+            .to(self.model_cfg.device)
+            .long()
+        )
+
+        return (
+            target_tokens,
+            label_B,
+            mem_sample_idx.unsqueeze(0).to(self.model_cfg.device),
+        )
+
+    @torch.no_grad()
     def get_flops_generate(self) -> int:
         model_to_profile = RARProfiler(self.generator, self.tokenizer, self.model_cfg)
         condition = torch.tensor([0], dtype=torch.long).to(self.model_cfg.device)

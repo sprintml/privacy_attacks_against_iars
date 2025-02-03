@@ -1,18 +1,18 @@
 from src.attacks.data_source import DataSource
 
-from src.attacks.features_extraction.extractor import FeatureExtractor
+from src.attacks.extractor import FeatureExtractor
 
 
-from src.attacks.features_extraction.mem_info import MemInfoExtractor
-from src.attacks.features_extraction.mem_info_mar import MemInfoMARExtractor
-from src.attacks.features_extraction.llm_mia_loss import (
+from src.attacks.mem_info import MemInfoExtractor
+from src.attacks.mem_info_mar import MemInfoMARExtractor
+from src.attacks.llm_mia_loss import (
     LLMMIALossExtractor,
     LLMMIALossCFGExtractor,
 )
-from src.attacks.features_extraction.llm_mia import LLMMIAExtractor
-from src.attacks.features_extraction.llm_mia_cfg import LLMMIACFGExtractor
+from src.attacks.llm_mia import LLMMIAExtractor
+from src.attacks.llm_mia_cfg import LLMMIACFGExtractor
 
-from src.attacks.features_extraction.defense import (
+from src.attacks.defense import (
     DefenseExtractor,
     DefenseLossExtractor,
 )

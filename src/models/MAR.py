@@ -28,7 +28,7 @@ download = {
     "huge": download_pretrained_marh,
 }
 
-model = {
+self = {
     "base": mar_base,
     "large": mar_large,
     "huge": mar_huge,
@@ -65,7 +65,7 @@ class MARWrapper(GeneralVARWrapper):
             )
         os.system("rm -rf pretrained_models")
 
-        mar = model[self.model_cfg.size](
+        mar = self[self.model_cfg.size](
             buffer_size=64,
             diffloss_d=self.model_cfg.diffloss_d,
             diffloss_w=self.model_cfg.diffloss_w,
@@ -203,6 +203,99 @@ class MARWrapper(GeneralVARWrapper):
             step_flops.append(flops)
             tokens, mask = model_to_profile.forward_generate(*args)
         return sum(step_flops)
+
+    @torch.no_grad()
+    def tokens_to_img(self, tokens: T, std: float = 0) -> T:
+        t = tokens.clone()
+        t += torch.randn_like(t) * std
+        return (
+            self.tokenizer.decode(self.generator.unpatchify(t) / 0.2325)
+            .add(1)
+            .mul(0.5)
+            .clamp(0, 1)
+        )
+
+    @torch.no_grad()
+    def get_memorization_scores(self, members_features: T, *args, **kwargs) -> T:
+        np.random.seed(0)
+        order = np.array(list(range(256)))
+        np.random.shuffle(order)
+        tokens_order = np.concat(
+            [
+                np.arange(256)[~np.isin(np.arange(256), order[: int(256 * 0.95)])],
+                np.arange(256)[np.isin(np.arange(256), order[: int(256 * 0.95)])],
+            ]
+        )
+        invert_order = np.empty_like(tokens_order)
+        invert_order[tokens_order] = np.arange(256)
+        distances = members_features[..., tokens_order] - members_features[..., 256:-1]
+        distances = torch.pow(distances, 2).sum(dim=1)
+        return -distances.mean(dim=1)
+
+    @torch.no_grad()
+    def generate_single_mar(
+        self, top: int, target_token_list: T, label: T, *args, **kwargs
+    ) -> T:
+        B = label.size(0)
+        num_steps = 64
+        masks, masks_pred = self.get_masks_masks_pred_indices(B, num_steps)
+        tokens = torch.zeros(
+            B, self.generator.seq_len, self.generator.token_embed_dim
+        ).to(self.model_cfg.device)
+        class_embedding = self.generator.class_emb(label)
+
+        target = target_token_list.clone().view(B, self.generator.seq_len, -1)
+
+        for step, mask, mask_to_pred in zip(range(num_steps), masks, masks_pred):
+            cur_tokens = tokens.clone()
+
+            if step < top:
+                cur_tokens[mask_to_pred.nonzero(as_tuple=True)] = target[
+                    mask_to_pred.nonzero(as_tuple=True)
+                ]
+            else:
+                x = self.generator.forward_mae_encoder(
+                    cur_tokens, mask, class_embedding
+                )
+                z = self.generator.forward_mae_decoder(x, mask)
+                z = z[mask_to_pred.nonzero(as_tuple=True)]
+
+                tokens_pred = self.generator.diffloss.sample(z, 1, 1)
+                cur_tokens[mask_to_pred.nonzero(as_tuple=True)] = tokens_pred
+
+            tokens = cur_tokens.clone()
+
+        return tokens.view(B, -1)  # B, seq_len * token_embed_dim
+
+    def tokens_to_token_list(self, tokens: T):
+        return tokens
+
+    def get_target_label_memorization(
+        self, members_features: T, scores: T, sample_classes: T, cls: int, k: int
+    ) -> Tuple[T, T, T]:
+        mask = sample_classes == cls
+        scores_cls = scores.clone()
+        scores_cls[~mask] = -torch.inf
+        mem_samples_indices = torch.topk(scores_cls, 10).indices
+        mem_sample_idx = mem_samples_indices[k]
+        label_B = (
+            members_features[mem_sample_idx, :][0, [-1]]
+            .to(self.model_cfg.device)
+            .long()
+        )
+
+        target_tokens = (
+            members_features[mem_sample_idx, :][:, :256]
+            .permute(1, 0)
+            .reshape(1, -1)
+            .to(self.model_cfg.device)
+        )
+
+        return (
+            target_tokens,
+            label_B,
+            mem_sample_idx.unsqueeze(0).to(self.model_cfg.device),
+        )
 
     @torch.no_grad()
     def loss_fn(self, z: T, target: T, mask: T, timestep: int) -> T:

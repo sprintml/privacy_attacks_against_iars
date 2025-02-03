@@ -1,20 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
+import sys
 
-set_plt = lambda: plt.rcParams.update(
-    {
-        "pgf.texsystem": "pdflatex",
-        "font.family": "serif",
-        "font.size": 15,  # Set font size to 11pt
-        "axes.labelsize": 15,  # -> axis labels
-        "xtick.labelsize": 12,
-        "ytick.labelsize": 12,
-        "legend.fontsize": 12,
-        "lines.linewidth": 2,
-        "text.usetex": False,
-        "pgf.rcfonts": False,
-    }
-)
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+from analysis.utils import set_plt
 set_plt()
 
 col = {
@@ -29,7 +20,7 @@ indices = {
 dfs = []
 
 for model in ["var_30", "rar_xxl"]:
-    df = pd.read_csv(f"{model}_memorized_train.csv")
+    df = pd.read_csv(f"analysis/plots/memorization/{model}_memorized_train.csv")
     df["Model"] = model
     df = df[["Model", "sample_idx"] + [f"cosine_{idx}" for idx in indices[model]]]
     df.rename(

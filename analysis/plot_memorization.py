@@ -1,7 +1,9 @@
 from omegaconf import open_dict
 from hydra import initialize, compose
-import sys
 import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 from torch import Tensor as T
@@ -27,39 +29,41 @@ from torchvision.utils import make_grid
 
 from torchvision.transforms import ToPILImage
 
-set_plt = lambda: plt.rcParams.update(
-    {
-        "pgf.texsystem": "pdflatex",
-        "font.family": "serif",
-        "font.size": 15,  # Set font size to 11pt
-        "axes.labelsize": 15,  # -> axis labels
-        "xtick.labelsize": 12,
-        "ytick.labelsize": 12,
-        "legend.fontsize": 12,
-        "lines.linewidth": 2,
-        "text.usetex": False,
-        "pgf.rcfonts": False,
-    }
-)
-
+from analysis.utils import set_plt
 set_plt()
-
-
-def tokens_to_token_list(tokens: T) -> List[T]:
-    token_list = []
-    idx = 0
-
-    patches = [1, 2, 3, 4, 5, 6, 8, 10, 13, 16]
-    ps = np.array([patch**2 for patch in patches])
-    for patch in ps:
-        scale_target = tokens[:, idx : idx + patch] if idx else tokens[:, [0]]
-        token_list.append(scale_target)
-        idx += patch
-    return token_list
 
 
 ids = list(range(8))
 device = "cuda"
+
+np.random.seed(0)
+
+mapping = {
+    "var_30": ["cosine_4", 4, 428, [4502, 2120, 3055, 2590], [2256]],
+    "rar_xxl": ["cosine_30", 4, 2120, [4500, 2120, 3055, 2590], []],
+    "mar_h": ["cosine_5", 2, 3616, [], [2256]],
+}
+ATTACK = {
+    "var_16": "mem_info",
+    "var_20": "mem_info",
+    "var_24": "mem_info",
+    "var_30": "mem_info",
+    "rar_xxl": "mem_info",
+    "mar_b": "mem_info_mar",
+    "mar_l": "mem_info_mar",
+    "mar_h": "mem_info_mar",
+}
+out_main = []
+out_uni1 = []
+out_uni2 = []
+out_appendix = []
+SPLIT = "train"
+
+cols_mem = {
+    "var_30": 4,
+    "rar_xxl": 30,
+    "mar_h": 5,
+}
 
 
 def get_datasets_indices(config, model_cfg, dataset_cfg, ids, split):
@@ -100,72 +104,6 @@ def get_sample_from_idx(all_datasets, all_indices, idx):
     final_idx = all_indices[dataset_idx, sample_idx].item()
     image, label = all_datasets[dataset_idx][final_idx]
     return image
-
-
-def tokens_to_img_var(tokens: T, model):
-    return (
-        model.tokenizer.idxBl_to_img(
-            tokens_to_token_list(tokens), same_shape=False, last_one=True
-        )
-        .add_(1)
-        .mul_(0.5)
-    )
-
-
-def tokens_to_img_rar(tokens: T, model):
-    img = model.tokenizer.decode_tokens(tokens.view(tokens.shape[0], -1))
-    img = torch.clamp(img, 0.0, 1.0)
-    return img
-
-
-def tokens_to_img_mar(tokens: T, model):
-    return (
-        model.tokenizer.decode(model.generator.unpatchify(tokens) / 0.2325)
-        .add(1)
-        .mul(0.5)
-        .clamp(0, 1)
-    )
-
-
-tokens_to_img = {
-    "var_16": tokens_to_img_var,
-    "var_20": tokens_to_img_var,
-    "var_24": tokens_to_img_var,
-    "var_30": tokens_to_img_var,
-    "rar_xxl": tokens_to_img_rar,
-    "mar_b": tokens_to_img_mar,
-    "mar_l": tokens_to_img_mar,
-    "mar_h": tokens_to_img_mar,
-}
-
-np.random.seed(0)
-
-mapping = {
-    "var_30": ["cosine_4", 4, 428, [4502, 2120, 3055, 2590], [2256]],
-    "rar_xxl": ["cosine_30", 4, 2120, [4500, 2120, 3055, 2590], []],
-    "mar_h": ["cosine_5", 2, 3616, [], [2256]],
-}
-ATTACK = {
-    "var_16": "mem_info",
-    "var_20": "mem_info",
-    "var_24": "mem_info",
-    "var_30": "mem_info",
-    "rar_xxl": "mem_info",
-    "mar_b": "mem_info_mar",
-    "mar_l": "mem_info_mar",
-    "mar_h": "mem_info_mar",
-}
-out_main = []
-out_uni1 = []
-out_uni2 = []
-out_appendix = []
-SPLIT = "train"
-
-cols_mem = {
-    "var_30": 4,
-    "rar_xxl": 30,
-    "mar_h": 5,
-}
 
 
 def plot(
@@ -230,7 +168,7 @@ def main():
             allow_pickle=True,
         )["data"]
 
-        df = pd.read_csv(f"{MODEL}_memorized_train.csv")
+        df = pd.read_csv(f"analysis/memorization/{MODEL}_memorized_train.csv")
         df["Model"] = MODEL
         df = df[
             [
@@ -252,7 +190,7 @@ def main():
         data = torch.from_numpy(data).to(device)
         col, c_idx, s_idx, uni_indices1, uni_indices2 = mapping[MODEL]
         pred = data[[s_idx], c_idx, :-2].to(device)
-        out_pred = tokens_to_img[MODEL](pred, model)
+        out_pred = model.tokens_to_img(pred)
         sample = get_sample_from_idx(
             all_datasets, indices, data[[s_idx], 5, -1].long().item()
         )
@@ -263,7 +201,7 @@ def main():
         if model not in ["mar_h"]:
             for uni_idx in uni_indices1:
                 pred = data[[uni_idx], c_idx, :-2].to(device)
-                out_pred = tokens_to_img[MODEL](pred, model)
+                out_pred = model.tokens_to_img(pred)
                 sample = get_sample_from_idx(
                     all_datasets, indices, data[[uni_idx], 5, -1].long().item()
                 )
@@ -274,7 +212,7 @@ def main():
         if model not in ["rar_xxl"]:
             for uni_idx in uni_indices2:
                 pred = data[[uni_idx], c_idx, :-2].to(device)
-                out_pred = tokens_to_img[MODEL](pred, model)
+                out_pred = model.tokens_to_img(pred)
                 sample = get_sample_from_idx(
                     all_datasets, indices, data[[uni_idx], 5, -1].long().item()
                 )
@@ -285,7 +223,7 @@ def main():
         for idx in np.random.choice(df.index.values, 4, replace=False):
             print(idx)
             pred = data[[idx], c_idx, :-2].to(device)
-            out_pred = tokens_to_img[MODEL](pred, model)
+            out_pred = model.tokens_to_img(pred)
             sample = get_sample_from_idx(
                 all_datasets, indices, data[[idx], 5, -1].long().item()
             )
@@ -302,10 +240,7 @@ def main():
     for idx in range(4):
         out_uni_1.append([out_uni1[idx][0], out_uni1[idx][1], out_uni1[idx + 4][1]])
 
-    print(len(out_uni2))
     out_uni_2 = [out_uni2[0][0], out_uni2[0][1], out_uni2[1][1]]
-    print(len(out_uni_2))
-
     images_teaser = (
         torch.cat(
             [

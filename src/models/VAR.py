@@ -5,13 +5,14 @@ import torch
 from torch import Tensor as T
 from torch.nn import functional as F
 from torchprofile import profile_macs
+import numpy as np
 from torchvision import transforms
 from time import time
 from functools import partial
 from tqdm import tqdm
 import os
 
-from typing import List
+from typing import List, Tuple
 
 
 class VARWrapper(GeneralVARWrapper):
@@ -155,6 +156,129 @@ class VARWrapper(GeneralVARWrapper):
             latents.append(z_NC.reshape(B, -1, C))
 
         return torch.concat(latents, dim=1)  # B, N_tokens, Cvae
+
+    def tokens_to_token_list(self, tokens: T) -> List[T]:
+        token_list = []
+        idx = 0
+
+        patches = [1, 2, 3, 4, 5, 6, 8, 10, 13, 16]
+        ps = np.array([patch**2 for patch in patches])
+        for patch in ps:
+            scale_target = tokens[:, idx : idx + patch] if idx else tokens[:, [0]]
+            token_list.append(scale_target)
+            idx += patch
+        return token_list
+
+    @torch.no_grad()
+    def tokens_to_img(self, tokens: T) -> T:
+        return (
+            self.tokenizer.idxBl_to_img(
+                self.tokens_to_token_list(tokens), same_shape=False, last_one=True
+            )
+            .add_(1)
+            .mul_(0.5)
+        )
+
+    @torch.no_grad()
+    def generate_single_memorization(
+        self, top: int, target_token_list: List[T], label: T, std: float
+    ) -> T:
+        B = label.shape[0]
+        total_tokens_used = 0
+        for b in self.generator.blocks:
+            b.attn.kv_caching(True)
+
+        sos = cond_BD = self.generator.class_emb(label)
+        lvl_pos = (
+            self.generator.lvl_embed(self.generator.lvl_1L) + self.generator.pos_1LC
+        )
+        zero_token_map: T = (
+            sos.unsqueeze(1).expand(B, self.generator.first_l, -1)
+            + self.generator.pos_start.expand(B, self.generator.first_l, -1)
+            + lvl_pos[:, : self.generator.first_l]
+        )
+
+        next_token_map = zero_token_map.clone()
+
+        cur_L = 0
+        f_hat = sos.new_zeros(
+            B,
+            self.generator.Cvae,
+            self.generator.patch_nums[-1],
+            self.generator.patch_nums[-1],
+        )
+
+        pred_tokens = []
+
+        for si, pn in enumerate(self.generator.patch_nums):  # si: i-th segment
+            scale_target = target_token_list[si]
+            cur_L += pn * pn
+            cond_BD_or_gss = self.generator.shared_ada_lin(cond_BD)
+            x = next_token_map
+            for b in self.generator.blocks:
+                x = b(x=x, cond_BD=cond_BD_or_gss, attn_bias=None)
+            logits_BlV: T = self.generator.get_logits(x, cond_BD)
+
+            if si < top:
+                idx_Bl = scale_target.clone()
+                total_tokens_used += len(target_token_list[si][0])
+            else:
+                logits_BlV = logits_BlV + torch.randn_like(logits_BlV) * std
+                idx_Bl = logits_BlV.argmax(dim=2)
+            pred_tokens.append(idx_Bl)
+
+            h_BChw = self.generator.vae_quant_proxy[0].embedding(idx_Bl)
+            h_BChw = h_BChw.transpose_(1, 2).reshape(B, self.generator.Cvae, pn, pn)
+            f_hat, next_token_map = self.generator.vae_quant_proxy[
+                0
+            ].get_next_autoregressive_input(
+                si, len(self.generator.patch_nums), f_hat, h_BChw
+            )
+            if si != self.generator.num_stages_minus_1:  # prepare for next stage
+                next_token_map = next_token_map.view(
+                    B, self.generator.Cvae, -1
+                ).transpose(1, 2)
+                next_token_map = (
+                    self.generator.word_embed(next_token_map)
+                    + lvl_pos[:, cur_L : cur_L + self.generator.patch_nums[si + 1] ** 2]
+                )
+        pred_tokens = torch.cat(pred_tokens, dim=1)
+        return pred_tokens
+
+    def get_memorization_scores(self, members_features: T, ft_idx: int) -> T:
+        out = []
+        idx = 0
+        patches = [1, 2, 3, 4, 5, 6, 8, 10, 13, 16]
+        for patch in patches:
+            out.append(members_features[:, ft_idx, idx : idx + patch**2].mean(dim=1))
+            idx += patch**2
+        return torch.stack(out, dim=1)
+
+    def get_target_label_memorization(
+        self, members_features: T, scores: T, sample_classes: T, cls: int, k: int
+    ) -> Tuple[T, T, T]:
+        mask = sample_classes == cls
+        scores_cls = scores.clone()
+        scores_cls[~mask] = -torch.inf
+        mem_samples_indices = torch.topk(scores_cls[:, -1], 10).indices
+        mem_sample_idx = mem_samples_indices[k]
+        label_B = (
+            members_features[mem_sample_idx, [0]][0, [-1]]
+            .to(self.model_cfg.device)
+            .long()
+        )
+
+        target_tokens = (
+            members_features[mem_sample_idx, [0]][[0], :680]
+            .to(self.model_cfg_device)
+            .long()
+        )
+
+        return (
+            target_tokens,
+            label_B,
+            mem_sample_idx.unsqueeze(0).to(self.model_cfg.device),
+        )
 
     @torch.no_grad()
     def get_loss_for_tokens(self, preds: T, ground_truth: T) -> T:

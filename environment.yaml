@@ -30,4 +30,6 @@ dependencies:
     - webdataset
     - torch_fidelity
     - torchinfo
+    - torchprofile
+    - torchmetrics
     - open-clip-torch
