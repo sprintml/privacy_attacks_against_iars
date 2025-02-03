@@ -13,8 +13,6 @@ from analysis.utils import (
     MODELS_NAME_MAPPING,
     MODELS_ORDER,
     MODELS,
-    MIAS_CITATIONS,
-    OURS,
 )
 
 from typing import Tuple, List
@@ -106,6 +104,7 @@ def main():
     df = pd.read_csv(f"{PATH_TO_PLOTS}/di_ablation.csv")
 
     get_ablation_table(df)
+
 
 if __name__ == "__main__":
     main()

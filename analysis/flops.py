@@ -1,7 +1,6 @@
 from omegaconf import open_dict
 from hydra import initialize, compose
 import sys
-import torch
 from tqdm import tqdm
 
 sys.path.append("./VAR")

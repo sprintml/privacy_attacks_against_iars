@@ -19,7 +19,6 @@ from analysis.utils import (
     MODEL_MIA_ATTACK_NAME_MAPPING,
     MIAS_CITATIONS,
     MIAS_ORDER,
-    OURS,
 )
 
 import multiprocessing as mp
@@ -33,29 +32,24 @@ SIZE = 5_000
 PATH_TO_FEATURES = "out/features"
 PATH_TO_PLOTS = "analysis/plots/mia_performance"
 
-MODEL_DATASET = {
-    "uvit_t2i": "coco",
-    "uvit_t2i_deep": "coco",
-}
-
 
 def get_features() -> Tuple[List[np.ndarray], List[np.ndarray]]:
     all_members, all_nonmembers = [], []
     for model in tqdm(MODELS):
         try:
             members = np.load(
-                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_{MODEL_DATASET.get(model, 'imagenet')}_train.npz",
+                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_imagenet_train.npz",
                 allow_pickle=True,
             )["data"]
             nonmembers = np.load(
-                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_{MODEL_DATASET.get(model, 'imagenet')}_val.npz",
+                f"{PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_imagenet_val.npz",
                 allow_pickle=True,
             )["data"]
             all_members.append(members)
             all_nonmembers.append(nonmembers)
         except FileNotFoundError:
             print(
-                f"Missing {model}, {PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_{MODEL_DATASET.get(model, 'imagenet')}"
+                f"Missing {model}, {PATH_TO_FEATURES}/{model}_{MODEL_MIA_ATTACK_NAME_MAPPING[model]}_{RUN_ID}_imagenet"
             )
             all_members.append(None)
             all_nonmembers.append(None)
@@ -134,9 +128,6 @@ def get_data() -> list:
             if f != "mia_performance.csv" and f.endswith(".csv")
         ]
     )
-    # data = data.sort_values(
-    #     by="Model", key=lambda col: col.map(lambda e: MODELS_ORDER.index(e))
-    # )
     return data
 
 
@@ -235,45 +226,6 @@ def main():
     df = pd.read_csv(f"{PATH_TO_PLOTS}/mia_performance.csv")
 
     get_main_paper_table(get_agg_data(df))
-
-    exit()
-
-    roc_data = get_roc_data()
-
-    attacks_main_paper = [
-        attack + citation for attack, citation in MIAS_CITATIONS.items()
-    ] + [OURS]
-
-    for name, col_name in zip(
-        ["tpr", "auc", "acc"], ["TPR@FPR=1\%", "AUC", "Accuracy"]
-    ):
-        for post, attacks in zip(
-            ["main", "appendix"], [attacks_main_paper, ATTACKS_ORDER]
-        ):
-            if post == "main" and name != "tpr":
-                continue
-            tmp_df = (
-                df.groupby(["Model", "Attack"])[col_name]
-                .apply(
-                    lambda x:
-                    # f"{x.mean():.2f}{r'\%'if col_name!='AUC' else ''}{{r'\tiny $\pm$'{x.std():.2f}{r'\%'if col_name!='AUC' else ''}}}")
-                    "{mean:.2f}{percent}{{\\tiny $\pm${std:.2f}{percent}}}".format(
-                        mean=x.mean(),
-                        std=x.std(),
-                        percent=r"\%" if col_name != "AUC" else "",
-                    )
-                )
-                .reset_index()
-                .pivot(index="Model", columns="Attack", values=col_name)
-                .loc[MODELS_ORDER][attacks]
-                .T
-            )
-
-            tmp_df.to_latex(
-                f"{PATH_TO_PLOTS}/mia_performance_{name}_{post}.tex", escape=False
-            )
-
-    plot_rocs(roc_data)
 
 
 if __name__ == "__main__":

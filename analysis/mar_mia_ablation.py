@@ -16,7 +16,7 @@ from analysis.utils import (
     MODELS,
 )
 
-from typing import Tuple, List
+from typing import List
 
 MODELS_ORDER = ["mar_b", "mar_l", "mar_h"]
 MODELS = ["mar_b", "mar_l", "mar_h"]

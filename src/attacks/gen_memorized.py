@@ -50,13 +50,7 @@ class GenerateCandidates(FeatureExtractor):
         print("Data loaded")
 
         torch.manual_seed(0)
-        classes = torch.randperm(1000)[: self.attack_cfg.nclasses][
-            self.attack_cfg.gsplit
-            * (self.attack_cfg.nclasses // self.attack_cfg.n_gsplits) : (
-                self.attack_cfg.gsplit + 1
-            )
-            * (self.attack_cfg.nclasses // self.attack_cfg.n_gsplits)
-        ]
+        classes = torch.randperm(1000)[: self.attack_cfg.nclasses]
         scores: T = self.model.get_memorization_scores(members_features, 1)
         sample_classes = members_features[:, 0, -1].clone()
         ins = []

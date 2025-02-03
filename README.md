@@ -31,31 +31,31 @@ The scripts will download the models by themselves.
 ## Running Membership Inference
 
 For each model, run
-`python3 -u main.py +action=features_extraction +attack=$attack +model=$model +dataset=imagenet +dataset.split=$split`
-Substitute $split with `train` and `val`. For attacking VAR and RAR set $attack=llm_mia_cfg, and for MAR: llm_mia_loss.
+`python3 -u main.py +attack=$attack +model=$model +dataset=imagenet +dataset.split=$split`
+Substitute $split with `train` and `val`. For attacking VAR and RAR set `attack=llm_mia_cfg`, and for MAR: `llm_mia_loss`.
 
-Then, run `analysis/mia_performance.py` to obtain TPR@FPR=1% for all IARs.
+Then, run `analysis/mia_performance.py` to obtain TPR@FPR=1% for all IARs. The results will be in the `analysis/plots/mia_performance` folder.
 
 ## Running Dataset Inference
 
-Run `analysis/di.py`. Make sure to limit the cpu usage, e.g., by using `taskset -c 0-10 python3 analysis/di.py` to use only 10 cores, if you work in a shared computing ecosystem.
+Run `analysis/di.py`. Make sure to limit the cpu usage, e.g., by using `taskset -c 0-10 python3 analysis/di.py` to use only 10 cores, if you work in a shared computing ecosystem. This script will output results of DI on IARs to `analysis/plots/di/di_results.csv`
 
 ## Data Extraction
 
-### Candidtates selection
+### Candidates selection
 ```
 for model in var_30 rar_xxl
 do
     for idx in ${0..8}
     do
-        python3 -u main.py +action=features_extraction +attack=mem_info +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 dataset.gpu_cnt=8 dataset.gpu_idx=$idx
+        python3 -u main.py +attack=mem_info +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 dataset.gpu_cnt=8 dataset.gpu_idx=$idx
     done
 done
 for model in mar_h
 do
     for idx in ${0..8}
     do
-        python3 -u main.py +action=features_extraction +attack=mem_info_mar +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 dataset.gpu_cnt=8 dataset.gpu_idx=$idx
+        python3 -u main.py +attack=mem_info_mar +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 dataset.gpu_cnt=8 dataset.gpu_idx=$idx
     done
 done
 ```
@@ -66,7 +66,7 @@ We suggest running these in a disributed GPU environment. The scripts are parale
 ```
 for model in var_30 rar_xxl mar_h
 do
-    python3 -u gen_memorized.py --model=$model --split=train
+    python3 -u main.py +attack=gen_memorized +model=$model +dataset=imagenet +dataset.split=train
 done
 ```
 
@@ -75,13 +75,13 @@ done
 ```
 for model in var_30 rar_xxl mar_h
 do
-    python3 -u find_memorized.py --model=$model --split=train
+    python3 -u main.py +attack=find_memorized +model=$model +dataset=imagenet +dataset.split=train
 done
 ```
 
-Finally, a `${model}_memorized_train.csv` will be obtained. To find the memorized samples, do
+Finally, a `{model}_memorized_train.csv` will be obtained in `analysis/plots/memorization`. To find the memorized samples, do
 ```
-df = pd.read_csv(f"{model}_memorized_train.csv")
+df = pd.read_csv(f"analysis/plots/memorization/{model}_memorized_train.csv")
 print(df.loc[df.cosine_30>0.75].shape[0], "samples extracted from", model) # for VAR and RAR
 print(df.loc[df.cosine_5>0.75].shape[0], "samples extracted from", model) # for MAR
 ```

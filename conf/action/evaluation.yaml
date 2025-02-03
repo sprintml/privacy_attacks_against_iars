@@ -1,7 +1,0 @@
-name: evaluation
-score: pvalue # tpr@fpr | pvalue
-device: cpu
-members_dataset_name: imagenet
-members_dataset_split: train
-nonmembers_dataset_name: imagenet
-nonmembers_dataset_split: val

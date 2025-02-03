@@ -17,25 +17,15 @@ set_plt = lambda: plt.rcParams.update(
     }
 )
 
-OURS = "LLM_MIA_CFG"
 
 ATTACKS = [
-    "combination_attack",
-    "di",
-    "llm_mia",
     "llm_mia_loss",
     "llm_mia_cfg",
-    "latent_error",
 ]
 
 ATTACKS_NAME_MAPPING = {
-    "combination_attack": "CDI",
-    "di": "DI",
-    "llm_mia": "LLM_MIA",
     "llm_mia_cfg": "LLM_MIA_CFG",
     "llm_mia_loss": "LLM_MIA_CFG",
-    "llm_mia_loss_cfg": "LLM_MIA_CFG",
-    "latent_error": "Latent Error",
 }
 
 ATTACKS_COLORS = {
@@ -101,25 +91,10 @@ _MIAS_CITATIONS = {
     # "SURP": "~\citep{zhang2024adaptive}",
     "Min-K\%++": "~\citep{zhang2024min}",
     "CAMIA": "~\citep{chang2024context}",
-    "Denoising Loss": "~\citep{carlini2022membership}",
-    "SecMI$_{stat}$": "~\citep{duan23bSecMI}",
-    "PIA": "~\citep{kong2024an}",
-    "PIAN": "~\citep{kong2024an}",
-    "GM": "",
-    "ML": "",
-    "CLiD": "",
 }
 
 MIAS_CITATIONS = {mia: f"{mia}{cite}" for mia, cite in _MIAS_CITATIONS.items()}
 MIAS_ORDER = list(MIAS_CITATIONS.values())
-
-LLM_MIAS_INDICES_ = {
-    "Loss": np.array([0]),
-    "Zlib": np.array([1]),
-    "Hinge": np.array([2]),
-    "Min-K\%": np.arange(3, 8),
-    "Min-K\%++": np.arange(8, 13),
-}
 
 LLM_MIAS_INDICES = {
     "Loss": np.array([0]),
