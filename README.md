@@ -1,5 +1,7 @@
 # Privacy Attacks on Image AutoRegressive Models
 
+[![arXiv](https://img.shields.io/badge/arXiv-2502.02514-b31b1b.svg)](https://arxiv.org/abs/2502.02514)
+
 ## Abstract
 
 Image AutoRegressive generation has emerged as a new powerful paradigm. Specifically, image autoregressive models (IARs) surpass state-of-the-art diffusion models (DMs) in both image quality (FID: 1.48 vs. 1.58) and generation speed. However, the privacy risks associated with IARs remain unexplored, raising concerns regarding their responsible deployment. To address this gap, we conduct a comprehensive privacy analysis of IARs with respect to DMs, which serve as reference points. We develop a novel membership inference attack (MIA) that achieves an exceptionally high success rate in detecting training images (with a TPR@FPR=1\% of 86.38\% vs. 4.91\% for DMs). We leverage our novel MIA to provide dataset inference (DI) for IARs, which requires as few as 6 samples to detect dataset membership (compared to 200 for DI in DMs). Finally, we reconstruct hundreds of training data points from an IAR (e.g., 698 from VAR-d30). Our results demonstrate a fundamental privacy-utility trade-off: while IARs excel in image generation quality and speed, they are also significantly more vulnerable to privacy attacks compared to DMs. This trend suggests that utilizing techniques from DMs within IARs, such as modeling the per-token probability distribution using a diffusion procedure, can potentially help to mitigate the vulnerability of IARs to privacy attacks. 
@@ -86,4 +88,19 @@ Finally, a `{model}_memorized_train.csv` will be obtained in `analysis/plots/mem
 df = pd.read_csv(f"analysis/plots/memorization/{model}_memorized_train.csv")
 print(df.loc[df.cosine_30>0.75].shape[0], "samples extracted from", model) # for VAR and RAR
 print(df.loc[df.cosine_5>0.75].shape[0], "samples extracted from", model) # for MAR
+```
+
+## Citation
+
+If you found our work helpful, please cite us using the following BiBTex:
+```
+@misc{kowalczuk2025privacyattacksimageautoregressive,
+      title={Privacy Attacks on Image AutoRegressive Models}, 
+      author={Antoni Kowalczuk and Jan Dubiński and Franziska Boenisch and Adam Dziedzic},
+      year={2025},
+      eprint={2502.02514},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2502.02514}, 
+}
 ```
