@@ -28,7 +28,7 @@ download = {
     "huge": download_pretrained_marh,
 }
 
-self = {
+model = {
     "base": mar_base,
     "large": mar_large,
     "huge": mar_huge,
@@ -65,7 +65,7 @@ class MARWrapper(GeneralVARWrapper):
             )
         os.system("rm -rf pretrained_models")
 
-        mar = self[self.model_cfg.size](
+        mar = model[self.model_cfg.size](
             buffer_size=64,
             diffloss_d=self.model_cfg.diffloss_d,
             diffloss_w=self.model_cfg.diffloss_w,

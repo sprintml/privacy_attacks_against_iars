@@ -13,30 +13,26 @@ from torch.nn import functional as F
 from tqdm import tqdm
 from torchmetrics.functional import pairwise_cosine_similarity
 
-top_tokens = {
-    "var_30": list(range(5)),
-    "rar_xxl": [0, 1, 5, 14, 30],
-    "mar_h": [0, 1, 5, 14, 30],
-}
-ATTACKS = {
-    "var_30": "mem_info",
-    "rar_xxl": "mem_info",
-    "mar_h": "mem_info_mar",
-}
-
-
-def mar_distance(target, pred):
-    return torch.sqrt(torch.pow(target - pred, 2).sum(dim=1)).cpu()
-
-
-distance = {
-    "var_30": lambda target, pred: (target == pred).sum(dim=1).cpu(),
-    "rar_xxl": lambda target, pred: (target == pred).sum(dim=1).cpu(),
-    "mar_h": mar_distance,
-}
-
 
 class ExtractMemorized(FeatureExtractor):
+    top_tokens = {
+        "var_30": list(range(5)),
+        "rar_xxl": [0, 1, 5, 14, 30],
+        "mar_h": [0, 1, 5, 14, 30],
+    }
+    ATTACKS = {
+        "var_30": "mem_info",
+        "rar_xxl": "mem_info",
+        "mar_h": "mem_info_mar",
+    }
+
+
+    distance = {
+        "var_30": lambda target, pred: (target == pred).sum(dim=1).cpu(),
+        "rar_xxl": lambda target, pred: (target == pred).sum(dim=1).cpu(),
+        "mar_h": lambda target, pred: torch.sqrt(torch.pow(target - pred, 2).sum(dim=1)).cpu(),
+    }
+
     @torch.no_grad()
     def get_features(self, img: T) -> T:
         model = (
@@ -70,7 +66,7 @@ class ExtractMemorized(FeatureExtractor):
     @torch.no_grad()
     def load_candidates(self) -> DataLoader:
         data = np.load(
-            f"out/features/{self.model_cfg.name}_{ATTACKS[self.model_cfg.name]}_memorized_imagenet_{self.dataset_cfg.name}_{self.attack_cfg.std}.npz",
+            f"out/features/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_memorized_imagenet_{self.dataset_cfg.name}_{self.attack_cfg.std}.npz",
             allow_pickle=True,
         )["data"]
 
@@ -119,14 +115,14 @@ class ExtractMemorized(FeatureExtractor):
                 [
                     batch[:, 5, -1].cpu(),
                     batch[:, 5, -2].cpu(),
-                    *[distance[self.model_cfg.name](target, pred) for pred in preds],
+                    *[self.distance[self.model_cfg.name](target, pred) for pred in preds],
                     *cosines.tolist(),
                 ]
             )
 
         out = np.concatenate(out, axis=1).T
         print(out.shape)
-        TOP_TOKENS = top_tokens[self.model_cfg.name]
+        TOP_TOKENS = self.top_tokens[self.model_cfg.name]
 
         df = pd.DataFrame(
             out,

@@ -270,7 +270,7 @@ class VARWrapper(GeneralVARWrapper):
 
         target_tokens = (
             members_features[mem_sample_idx, [0]][[0], :680]
-            .to(self.model_cfg_device)
+            .to(self.model_cfg.device)
             .long()
         )
 

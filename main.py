@@ -24,7 +24,6 @@ from src import (
     DataSource,
     gen_models,
     feature_extractors,
-    score_computers,
 )
 
 
@@ -33,13 +32,18 @@ def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
 
     model_cfg = cfg.model
-    action_cfg = cfg.action
     attack_cfg = cfg.attack
     dataset_cfg = cfg.dataset
     config = cfg.cfg
     with open_dict(model_cfg):
-        model_cfg.device = action_cfg.device
+        model_cfg.device = config.device
         model_cfg.seed = config.seed
+
+    if "action" not in cfg:
+        with open_dict(cfg):
+            cfg.action = {"name": "features_extraction", "device": config.device}
+    action_cfg = cfg.action
+
 
     action_input = [config, model_cfg, action_cfg, attack_cfg, dataset_cfg]
 
@@ -51,12 +55,6 @@ def main(cfg: DictConfig) -> None:
 
     if action_cfg.name == "features_extraction":
         features_extraction(*action_input)
-    elif action_cfg.name == "scores_computation":
-        scores_computation(*action_input)
-    elif action_cfg.name == "evaluation":
-        evaluation(*action_input)
-    elif action_cfg.name == "evaluation_bulk":
-        evaluation_bulk(*action_input)
     else:
         raise ValueError("Invalid action name")
 

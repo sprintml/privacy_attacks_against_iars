@@ -7,35 +7,34 @@ from itertools import product
 
 import numpy as np
 
-top_tokens = {
-    "var_30": list(range(5)),
-    "rar_xxl": [0, 1, 5, 14, 30],
-    "mar_h": [0, 1, 2, 7, 15],
-}
-
-ATTACKS = {
-    "var_30": "mem_info",
-    "rar_xxl": "mem_info",
-    "mar_h": "mem_info_mar",
-}
-
-TOP_CLASS_SAMPLES = list(range(5))
-
-
 class GenerateCandidates(FeatureExtractor):
+    top_tokens = {
+        "var_30": list(range(5)),
+        "rar_xxl": [0, 1, 5, 14, 30],
+        "mar_h": [0, 1, 2, 7, 15],
+    }
+
+    ATTACKS = {
+        "var_30": "mem_info",
+        "rar_xxl": "mem_info",
+        "mar_h": "mem_info_mar",
+    }
+
+    TOP_CLASS_SAMPLES = list(range(5))
+
     def get_data(self, split: str) -> np.ndarray:
         RUN_IDS = [f"1M_{i}" for i in range(8)] if split == "train" else ["50k"]
         out = []
         for run_id in tqdm(RUN_IDS):
             try:
                 data = np.load(
-                    f"out/features/{self.model_cfg.name}_{ATTACKS[self.model_cfg.name]}_{run_id}_imagenet_{split}.npz",
+                    f"out/features/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_{run_id}_imagenet_{split}.npz",
                     allow_pickle=True,
                 )
                 out.append(data["data"])
             except FileNotFoundError:
                 print(
-                    f"File not found: {self.model_cfg.name}_{ATTACKS[self.model_cfg.name]}_{run_id}_imagenet_{split}.npz"
+                    f"File not found: {self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_{run_id}_imagenet_{split}.npz"
                 )
         return np.concatenate(out, axis=0)
 
@@ -44,7 +43,7 @@ class GenerateCandidates(FeatureExtractor):
 
     @torch.no_grad()
     def run(self, *args, **kwargs) -> T:
-        TOP_TOKENS = top_tokens[self.model_cfg.name]
+        TOP_TOKENS = self.top_tokens[self.model_cfg.name]
         members_features = self.get_data(self.dataset_cfg.split)
         members_features = torch.from_numpy(members_features)
         print("Data loaded")
@@ -56,7 +55,7 @@ class GenerateCandidates(FeatureExtractor):
         ins = []
 
         for cls, top_k in tqdm(
-            product(classes, TOP_CLASS_SAMPLES), desc="Getting Samples"
+            product(classes, self.TOP_CLASS_SAMPLES), desc="Getting Samples"
         ):
             target_tokens, label_B, s_idx = self.model.get_target_label_memorization(
                 members_features, scores, sample_classes, cls, top_k
@@ -91,6 +90,6 @@ class GenerateCandidates(FeatureExtractor):
 
         out = torch.cat(out, dim=0).cpu().numpy()
         np.savez(
-            f"{self.config.path_to_features}/{self.model_cfg.name}_{ATTACKS[self.model_cfg.name]}_memorized_imagenet_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
+            f"{self.config.path_to_features}/{self.model_cfg.name}_{self.ATTACKS[self.model_cfg.name]}_memorized_imagenet_{self.dataset_cfg.split}_{self.attack_cfg.std}.npz",
             data=out,
         )

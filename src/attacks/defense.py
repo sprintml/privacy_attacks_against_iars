@@ -1,5 +1,5 @@
-from src.attacks.features_extraction.llm_mia import LLMMIAExtractor
-from src.attacks.features_extraction.llm_mia_loss import LLMMIALossExtractor
+from src.attacks.llm_mia import LLMMIAExtractor
+from src.attacks.llm_mia_loss import LLMMIALossExtractor
 from torch import Tensor as T
 import torch
 

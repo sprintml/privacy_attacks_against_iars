@@ -51,22 +51,6 @@ class LLMMIALossExtractor(FeatureExtractor):
         # negative because we want members to have lower values; for logprobas it is the opposite
         return -(slope_num / slope_den).unsqueeze(1)  # B, 1
 
-    def compute_all(self, token_losses: T, tokens: T) -> T:
-        features = []
-        if "loss" in self.attack_cfg.metric_list:
-            features.append(self.get_sample_losses(token_losses.clone()))
-        if "zlib_ratio" in self.attack_cfg.metric_list:
-            features.append(self.get_zlib_ratios(token_losses.clone(), tokens.clone()))
-        if "min_k%" in self.attack_cfg.metric_list:
-            for k in self.attack_cfg.ks:
-                k = int(k * token_losses.clone().shape[1])
-                features.append(self.get_max_k_losses(token_losses.clone(), k))
-        if "camia" in self.attack_cfg.metric_list:
-            features.append(self.get_above_mean_losses(token_losses.clone()))
-            features.append(self.get_above_prev_mean_losses(token_losses.clone()))
-            features.append(self.get_slope(token_losses.clone()))
-        return torch.stack(features, dim=2).cpu()  # B, 1, N_features
-
     def process_batch(self, batch: Tuple[T, T]) -> T:
         """
         TODO: create docstring
@@ -76,18 +60,29 @@ class LLMMIALossExtractor(FeatureExtractor):
         if type(classes) == T:
             classes = classes.to(self.device).long()
 
-        idx = self.attack_cfg.idx
-        tokens = self.model.tokenize(images[idx * 16 : (idx + 1) * 16])
+        tokens = self.model.tokenize(images)
 
-        timestep = self.attack_cfg.timestep
+        try:
+            timestep = self.attack_cfg.timestep
+        except:
+            timestep = None
         token_losses = self.model.get_loss_per_token(
-            images[idx * 16 : (idx + 1) * 16],
-            classes[idx * 16 : (idx + 1) * 16],
-            ltype="latent",
-            is_cfg=self.attack_cfg.is_cfg,
-            timestep=timestep,
+            images, classes, ltype="latent", is_cfg=self.attack_cfg.is_cfg, timestep= timestep,
         )
-        return self.compute_all(token_losses.clone(), tokens.clone())
+        features = []
+        if "loss" in self.attack_cfg.metric_list:
+            features.append(self.get_sample_losses(token_losses))
+        if "zlib_ratio" in self.attack_cfg.metric_list:
+            features.append(self.get_zlib_ratios(token_losses, tokens))
+        if "min_k%" in self.attack_cfg.metric_list:
+            for k in self.attack_cfg.ks:
+                k = int(k * token_losses.shape[1])
+                features.append(self.get_max_k_losses(token_losses, k))
+        if "camia" in self.attack_cfg.metric_list:
+            features.append(self.get_above_mean_losses(token_losses))
+            features.append(self.get_above_prev_mean_losses(token_losses))
+            features.append(self.get_slope(token_losses))
+        return torch.stack(features, dim=2).cpu()  # B, 1, N_features
 
 
 LLMMIALossCFGExtractor = LLMMIALossExtractor

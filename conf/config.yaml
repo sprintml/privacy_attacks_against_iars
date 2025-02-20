@@ -9,3 +9,4 @@ cfg:
   valid_samples: 0
   run_id: 10k
   dataloader_num_workers: 4
+  device: cuda

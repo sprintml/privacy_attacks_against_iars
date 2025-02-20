@@ -5,6 +5,8 @@ from src.attacks.extractor import FeatureExtractor
 
 from src.attacks.mem_info import MemInfoExtractor
 from src.attacks.mem_info_mar import MemInfoMARExtractor
+from src.attacks.gen_memorized import GenerateCandidates
+from src.attacks.find_memorized import ExtractMemorized
 from src.attacks.llm_mia_loss import (
     LLMMIALossExtractor,
     LLMMIALossCFGExtractor,
@@ -27,6 +29,8 @@ feature_extractors: Dict[str, FeatureExtractor] = {
     "llm_mia_loss": LLMMIALossExtractor,
     "llm_mia_loss_cfg": LLMMIALossCFGExtractor,
     "llm_mia": LLMMIAExtractor,
+    "gen_memorized": GenerateCandidates,
+    "find_memorized": ExtractMemorized,
     "llm_mia_cfg": LLMMIACFGExtractor,
     "defense": DefenseExtractor,
     "defense_loss": DefenseLossExtractor,
