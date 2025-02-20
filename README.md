@@ -50,16 +50,16 @@ Run `analysis/di.py`. Make sure to limit the cpu usage, e.g., by using `taskset 
 ```
 for model in var_30 rar_xxl
 do
-    for idx in ${0..8}
+    for idx in {0..8}
     do
-        python3 -u main.py +attack=mem_info +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 dataset.gpu_cnt=8 dataset.gpu_idx=$idx
+        python3 -u main.py +attack=mem_info +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 +dataset.gpu_cnt=8 +dataset.gpu_idx=$idx
     done
 done
 for model in mar_h
 do
-    for idx in ${0..8}
+    for idx in {0..8}
     do
-        python3 -u main.py +attack=mem_info_mar +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 dataset.gpu_cnt=8 dataset.gpu_idx=$idx
+        python3 -u main.py +attack=mem_info_mar +model=$model +dataset=imagenet +dataset.split=train cfg.run_id=1M_${idx} cfg.n_samples_eval=140000 +dataset.gpu_cnt=8 +dataset.gpu_idx=$idx
     done
 done
 ```
