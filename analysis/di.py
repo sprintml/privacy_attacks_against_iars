@@ -148,7 +148,7 @@ def get_row(
             exit()
     pd.DataFrame(
         out,
-        columns=["Attack", "Model", "CLF", "n", "pvalue", "is_correct_order", "r"],
+        columns=["Attack", "Model", "n", "pvalue", "is_correct_order", "r"],
     ).to_csv(
         f"{PATH_TO_PLOTS}/tmp/pvalue_per_sample_{model}_{attack}_{n}.csv",
         index=False,
@@ -204,7 +204,7 @@ def main():
         data = get_data()
         df = pd.DataFrame(
             data,
-            columns=["Attack", "Model", "CLF", "n", "pvalue", "is_correct_order", "r"],
+            columns=["Attack", "Model", "n", "pvalue", "is_correct_order", "r"],
         )
         df.to_csv(f"{PATH_TO_PLOTS}/pvalue_per_sample.csv", index=False)
     df = df.groupby(["Model", "n"]).pvalue.mean().reset_index()
