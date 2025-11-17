@@ -94,13 +94,18 @@ print(df.loc[df.cosine_5>0.75].shape[0], "samples extracted from", model) # for 
 
 If you found our work helpful, please cite us using the following BiBTex:
 ```
-@misc{kowalczuk2025privacyattacksimageautoregressive,
-      title={Privacy Attacks on Image AutoRegressive Models}, 
-      author={Antoni Kowalczuk and Jan Dubiński and Franziska Boenisch and Adam Dziedzic},
-      year={2025},
-      eprint={2502.02514},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2502.02514}, 
+@InProceedings{kowalczuk2025privacy,
+  title = 	 {Privacy Attacks on Image {A}uto{R}egressive Models},
+  author =       {Kowalczuk, Antoni and Dubi\'{n}ski, Jan and Boenisch, Franziska and Dziedzic, Adam},
+  booktitle = 	 {Proceedings of the 42nd International Conference on Machine Learning},
+  pages = 	 {31667--31695},
+  year = 	 {2025},
+  volume = 	 {267},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {13--19 Jul},
+  publisher =    {PMLR},
+  pdf = 	 {https://raw.githubusercontent.com/mlresearch/v267/main/assets/kowalczuk25a/kowalczuk25a.pdf},
+  url = 	 {https://proceedings.mlr.press/v267/kowalczuk25a.html},
 }
+
 ```
