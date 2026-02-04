@@ -109,3 +109,7 @@ If you found our work helpful, please cite us using the following BiBTex:
 }
 
 ```
+
+## Acknowledgment 
+
+We would like to thank Bihe Zhao for identifying a configuration issue in our VAR experiments.

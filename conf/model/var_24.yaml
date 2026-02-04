@@ -17,3 +17,5 @@ mid_reso: 1.125
 
 top_k: 900
 top_p: 0.96
+
+cond_drop_rate: 0.0
