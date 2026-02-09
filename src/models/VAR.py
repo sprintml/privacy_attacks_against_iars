@@ -28,6 +28,7 @@ class VARWrapper(GeneralVARWrapper):
             depth=self.model_cfg.model_depth,
             shared_aln=self.model_cfg.shared_aln,
         )
+        var.cond_drop_rate = self.model_cfg.cond_drop_rate
         hf_home = "https://huggingface.co/FoundationVision/var/resolve/main"
         vae_ckpt, var_ckpt = (
             "vae_ch160v4096z32.pth",
